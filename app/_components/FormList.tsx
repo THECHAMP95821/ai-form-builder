@@ -10,9 +10,6 @@ function FormList() {
 
     const {user}=useUser();
     const [formList,setFormList]=useState<any>([]);
-    useEffect(()=>{
-        user&&GetFormList();
-    },[user])
     const GetFormList=async()=>{
         const result=await db.select().from(JsonForms)
         .where(eq(JsonForms.createdBy,user?.primaryEmailAddress?.emailAddress!))
@@ -21,6 +18,10 @@ function FormList() {
         setFormList(result);
         console.log(result);
     }
+    useEffect(()=>{
+        user&&GetFormList();
+    },[user,GetFormList])
+    
 
   return (
     <div className='mt-5 grid grid-cols-2 md:grid-cols-3 gap-5'>

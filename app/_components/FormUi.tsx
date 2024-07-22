@@ -154,7 +154,7 @@ const FormUi = ({
                             >
                                 {field.options?.map(
                                     (option: any, idx: number) => (
-                                        <div className="flex items-center space-x-2">
+                                        <div key={idx} className="flex items-center space-x-2">
                                             <RadioGroupItem
                                                 onClick={() =>
                                                     hadleSelectChange(
