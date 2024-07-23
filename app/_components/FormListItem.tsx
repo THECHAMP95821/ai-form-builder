@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useUser } from "@clerk/nextjs";
 import { db } from "@/configs";
-import { JsonForms } from "@/configs/schema";
+import { JsonForms, userResponses } from "@/configs/schema";
 import { and, eq } from "drizzle-orm";
 import { toast } from "sonner";
 import { RWebShare } from "react-web-share";
@@ -31,23 +31,47 @@ function FormListItem({
 }) {
     const { user } = useUser();
     const onDeleteForm = async () => {
-        const result = await db
-            .delete(JsonForms)
-            .where(
-                and(
-                    eq(JsonForms.id, formRecord.id),
-                    eq(
-                        JsonForms.createdBy,
-                        user?.primaryEmailAddress?.emailAddress!
+        console.log("DELETING FORM")
+        const formId = formRecord.id;
+        console.log("FORM ID", formId)
+        const userEmail = user?.primaryEmailAddress?.emailAddress!;
+    
+        try {
+            // Check for dependent rows in userResponses
+            const dependentRows = await db
+                .select()
+                .from(userResponses)
+                .where(eq(userResponses.formRef, formId));
+    
+            if (dependentRows.length > 0) {
+                // Delete dependent rows in userResponses
+                await db
+                    .delete(userResponses)
+                    .where(eq(userResponses.formRef, formId));
+            }
+    
+            // Delete the row in jsonForms
+            const result = await db
+                .delete(JsonForms)
+                .where(
+                    and(
+                        eq(JsonForms.id, formId),
+                        eq(JsonForms.createdBy, userEmail)
                     )
-                )
-            );
-
-        if (result) {
-            toast("Form Deleted!!!");
-            refreshData();
+                );
+    
+            if (result) {
+                toast("Form Deleted!!!");
+                refreshData();
+            } else {
+                toast("Failed to delete form from jsonForms.");
+            }
+        } catch (error) {
+            console.error("Failed to delete form:", error);
+            toast("Failed to delete form.");
         }
     };
+
     return (
         <div className="border shadow-sm rounded-lg p-4">
             <div className="flex justify-between">
